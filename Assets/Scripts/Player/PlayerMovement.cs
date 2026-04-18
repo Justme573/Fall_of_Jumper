@@ -50,8 +50,7 @@ void Update()
 
     // Like Gravity
     velocity.y += gravity * Time.deltaTime;
-
-    // 🔥 COMBINE EVERYTHING
+    
     Vector3 finalMove = move * speed + velocity;
 
     controller.Move(finalMove * Time.deltaTime);
