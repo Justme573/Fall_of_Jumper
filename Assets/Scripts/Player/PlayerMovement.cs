@@ -1,17 +1,28 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float mouseSensitiyity = 100f;
-    
+    public float mouseSensitivity = 100f;
     public float speed = 5f;
     public float gravity = -9.81f;
     public float jumpHeight = 2f;
-
     public Transform playerCamera;
+    public FixedJoystick joystick;
+    public bool forceAndroidControls = false;
+
     float xRotation = 0f;
     CharacterController controller;
     Vector3 velocity;
+
+    Vector2 moveInput;
+    Vector2 lookInput;
+    bool jumpPressed;
+
+    public void AddLookInput(Vector2 delta)
+    {
+        lookInput = delta;
+    }
 
     void Start()
     {
@@ -19,40 +30,65 @@ public class PlayerMovement : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
     }
 
-void Update()
-{
-    // Mouse Look
-    float mouseX = Input.GetAxis("Mouse X") * mouseSensitiyity * Time.deltaTime;
-    float mouseY = Input.GetAxis("Mouse Y") * mouseSensitiyity * Time.deltaTime;
-
-    xRotation -= mouseY;
-    xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-    playerCamera.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-    transform.Rotate(Vector3.up * mouseX);
-
-    // Movement Input
-    float x = Input.GetAxis("Horizontal");
-    float z = Input.GetAxis("Vertical");
-
-    Vector3 move = transform.right * x + transform.forward * z;
-
-    // Ground check fix
-    if (controller.isGrounded && velocity.y < 0)
+    void OnMove(InputValue value)
     {
-        velocity.y = -2f;
+        moveInput = value.Get<Vector2>();
     }
 
-    // Jump
-    if (Input.GetButtonDown("Jump") && controller.isGrounded)
+    void OnLook(InputValue value)
     {
-        velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        lookInput = value.Get<Vector2>();
     }
 
-    // Like Gravity
-    velocity.y += gravity * Time.deltaTime;
-    
-    Vector3 finalMove = move * speed + velocity;
+    void OnJump(InputValue value)
+    {
+        if (value.isPressed) jumpPressed = true;
+    }
 
-    controller.Move(finalMove * Time.deltaTime);
-}
+    void Update()
+    {
+        bool isAndroid = Application.platform == RuntimePlatform.Android || forceAndroidControls;
+
+        // Look
+        float mouseX, mouseY;
+        if (isAndroid)
+        {
+            mouseX = lookInput.x * mouseSensitivity * Time.deltaTime;
+            mouseY = lookInput.y * mouseSensitivity * Time.deltaTime;
+        }
+        else
+        {
+            mouseX = lookInput.x * mouseSensitivity * Time.deltaTime;
+            mouseY = lookInput.y * mouseSensitivity * Time.deltaTime;
+        }
+
+        // Rotation mit NaN-Schutz
+        if (!float.IsNaN(mouseX) && !float.IsNaN(mouseY))
+        {
+            xRotation -= mouseY;
+            xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+            playerCamera.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+            transform.Rotate(Vector3.up * mouseX);
+        }
+
+        // Move
+        Vector3 move;
+        if (isAndroid)
+            move = transform.right * joystick.Horizontal + transform.forward * joystick.Vertical;
+        else
+            move = transform.right * moveInput.x + transform.forward * moveInput.y;
+
+        if (controller.isGrounded && velocity.y < 0)
+            velocity.y = -2f;
+
+        if (jumpPressed && controller.isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            jumpPressed = false;
+        }
+
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move((move * speed + velocity) * Time.deltaTime);
+        lookInput = Vector2.zero;
+    }
 }
