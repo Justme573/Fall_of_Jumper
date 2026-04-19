@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Assets/Scripts/Main menu/MusicManager.cs" />
     <Compile Include="Assets/Scripts/Cam/ThirdPersonCamera.cs" />
+    <Compile Include="Assets/Scripts/Player/KillZone.cs" />
     <Compile Include="Assets/Scripts/Player/PlayerMovement.cs" />
     <Compile Include="Assets/Scripts/Main menu/IntroVideo.cs" />
     <Compile Include="Assets/Scripts/Main menu/MainMenu.cs" />
