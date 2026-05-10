@@ -30,6 +30,12 @@ public class ServerStartup : MonoBehaviour
     {
         yield return new WaitUntil(() => NetworkManager.Singleton != null);
         Debug.Log("NetworkManager gefunden, starte Server!");
+        
+        // An alle Interfaces binden statt nur localhost
+        var transport = (Unity.Netcode.Transports.UTP.UnityTransport)
+            NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+        transport.SetConnectionData("0.0.0.0", 7777, "0.0.0.0");
+        
         NetworkManager.Singleton.StartServer();
         NetworkManager.Singleton.SceneManager.LoadScene("MultiplayerTest", LoadSceneMode.Single);
     }

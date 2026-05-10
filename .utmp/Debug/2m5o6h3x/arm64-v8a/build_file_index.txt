@@ -1,0 +1,2 @@
+/mnt/ssd2/Fall of jumper/My project/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/CMakeLists.txt
+/mnt/ssd2/Fall of jumper/My project/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/GameActivity/CMakeLists.txt
