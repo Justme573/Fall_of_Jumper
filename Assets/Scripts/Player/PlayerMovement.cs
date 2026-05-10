@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Unity.Netcode;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : NetworkBehaviour
 {
     public float mouseSensitivity = 100f;
     public float speed = 5f;
@@ -27,42 +28,44 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         controller = GetComponent<CharacterController>();
+
+        if (!IsOwner) return; // Nur eigene Kamera sperren
         Cursor.lockState = CursorLockMode.Locked;
     }
 
     void OnMove(InputValue value)
     {
+        if (!IsOwner) return;
         moveInput = value.Get<Vector2>();
     }
 
     void OnLook(InputValue value)
     {
+        if (!IsOwner) return;
         lookInput = value.Get<Vector2>();
     }
 
     void OnJump(InputValue value)
     {
+        if (!IsOwner) return;
         if (value.isPressed) jumpPressed = true;
     }
 
     void Update()
     {
+        if (!IsOwner) return; // Alles nur für eigenen Spieler!
+
+        if (controller.isGrounded && velocity.y < 0)
+            velocity.y = -2f;
+
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
+
         bool isAndroid = Application.platform == RuntimePlatform.Android || forceAndroidControls;
 
-        // Look
-        float mouseX, mouseY;
-        if (isAndroid)
-        {
-            mouseX = lookInput.x * mouseSensitivity * Time.deltaTime;
-            mouseY = lookInput.y * mouseSensitivity * Time.deltaTime;
-        }
-        else
-        {
-            mouseX = lookInput.x * mouseSensitivity * Time.deltaTime;
-            mouseY = lookInput.y * mouseSensitivity * Time.deltaTime;
-        }
+        float mouseX = lookInput.x * mouseSensitivity * Time.deltaTime;
+        float mouseY = lookInput.y * mouseSensitivity * Time.deltaTime;
 
-        // Rotation mit NaN-Schutz
         if (!float.IsNaN(mouseX) && !float.IsNaN(mouseY))
         {
             xRotation -= mouseY;
@@ -71,15 +74,11 @@ public class PlayerMovement : MonoBehaviour
             transform.Rotate(Vector3.up * mouseX);
         }
 
-        // Move
         Vector3 move;
         if (isAndroid)
             move = transform.right * joystick.Horizontal + transform.forward * joystick.Vertical;
         else
             move = transform.right * moveInput.x + transform.forward * moveInput.y;
-
-        if (controller.isGrounded && velocity.y < 0)
-            velocity.y = -2f;
 
         if (jumpPressed && controller.isGrounded)
         {
@@ -87,8 +86,7 @@ public class PlayerMovement : MonoBehaviour
             jumpPressed = false;
         }
 
-        velocity.y += gravity * Time.deltaTime;
-        controller.Move((move * speed + velocity) * Time.deltaTime);
+        controller.Move(move * speed * Time.deltaTime);
         lookInput = Vector2.zero;
     }
 }
